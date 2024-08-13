@@ -42,8 +42,10 @@ class Program
 		ListItems(purchased, true);
 
 		// print most and least expensive items
-		Console.WriteLine($"Most expensive item: {purchased.Max(static pair => pair.Value)}");
-		Console.WriteLine($"Least expensive item: {purchased.Min(static pair => pair.Value)}");
+		KeyValuePair<string, double> highest = purchased.MaxBy(static pair => pair.Value);
+		Console.WriteLine(string.Format("Most expensive item: {0} @ {1:C}", highest.Key, highest.Value));
+		KeyValuePair<string, double> lowest = purchased.MinBy(static pair => pair.Value);
+		Console.WriteLine(string.Format("Least expensive item: {0} @ {1:C}", lowest.Key, lowest.Value));
 
 		// goodbye
 		Console.WriteLine("Thank you for your purchase!");
@@ -57,18 +59,24 @@ class Program
 		int columnName = (from item in items select item.Key).Append("Item").Max(static s => s.Length);
 
 		string format = $"{{0, -{columnName}}}    {{1, -6:C}}";
-		// becomes {0, -#}    {1, -6}
+		if (!showSum)
+			format = "{2, -3}    " + format;
 
 		// print header text with divider and spacing
-		string header = string.Format(format, "Item", "Price");
+		string header = string.Format(format, "Item", "Price", "#");
+
 		Console.WriteLine();
 		Console.WriteLine(header);
 		Console.WriteLine(new string('\x2500', header.Length));
 		Console.WriteLine();
 
 		// print entries
+		int i = 1;
 		foreach ((string name, double price) in items)
-			Console.WriteLine(string.Format(format, name, price));
+		{
+			Console.WriteLine(string.Format(format, name, price, i));
+			i++;
+		}
 
 		if (showSum)
 		{
@@ -92,13 +100,13 @@ class Program
 
 			line = line.Trim();
 
-			if (
-				// check if it's a usable number
-				int.TryParse(line, out int index) && index > 0 &&
-				// get the item with that index if it exists
-				stock.ElementAtOrDefault(index - 1) is KeyValuePair<string, double> pair
-			)
-				return pair.Key;
+			// try to get item by number
+			if (int.TryParse(line, out int index) && index > 0)
+			{
+				var pair = stock.ElementAtOrDefault(index - 1);
+				if (pair.Key != null)
+					return pair.Key;
+			}
 
 			// get item by name
 			if (stock.ContainsKey(line))
